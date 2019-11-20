@@ -1,204 +1,175 @@
-var svgWidth = 900;
+var svgWidth = 960;
 var svgHeight = 500;
 
-var margin = { top: 20, right: 40, bottom: 80, left: 100 };
 
-var width = svgWidth - margin.left - margin.right;
-var height = svgHeight - margin.top - margin.bottom;
+var chartMargin = {
+  top: 30,
+  right: 30,
+  bottom: 30,
+  left: 30
+};
 
+var chartWidth = svgWidth - chartMargin.left - chartMargin.right;
+var chartHeight = svgHeight - chartMargin.top - chartMargin.bottom;
+var padding = 25; 
+var formatPercent = d3.format('.2%');
 
 var svg = d3.select("#scatter")
-  .append("svg")
-  .attr("width", svgWidth)
-  .attr("height", svgHeight)
+    .append("svg")
+    .attr("height", svgHeight)
+    .attr("width", svgWidth)
+  
   .append("g")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+    .attr("transform", "translate(" + chartMargin.right + ", " + chartMargin.top + ")");
 
 var chart = svg.append("g");
 
 
-d3.select(".chart").append("div").attr("class", "tooltip").style("opacity", 0);
-
-
-d3.csv("assets/data/data.csv", function(err, myData) {
-  if (err) throw err;
-
-  myData.forEach(function(data) {
-    data.obese = Number(data.obese);
-    data.bachelorOrHigher = Number(data.bachelorOrHigher);
-    data.currentSmoker = Number(data.currentSmoker);
-  });
-
-  console.log(myData);
-
-  
-  var yLinearScale = d3.scaleLinear().range([height, 0]);
-
-  var xLinearScale = d3.scaleLinear().range([0, width]);
-
-  
-  var bottomAxis = d3.axisBottom(xLinearScale);
-  var leftAxis = d3.axisLeft(yLinearScale);
-
- 
-  var xMin;
-  var xMax;
-  var yMax;
-
- 
-  function findMinAndMax(dataColumnX) {
-    xMin = d3.min(myData, function(data) {
-      return Number(data[dataColumnX]) * 0.8;
-    });
-
-    xMax = d3.max(myData, function(data) {
-      return Number(data[dataColumnX]) * 1.1;
-    });
-
-    yMax = d3.max(myData, function(data) {
-      return Number(data.bachelorOrHigher) * 1.1;
-    });
-  }
-
-
-  var currentAxisLabelX = "obese";
-
-  var currentAxisLabelY = "bachelorOrHigher";
-
-  writeAnalysis(currentAxisLabelX, currentAxisLabelY);
-
-  
-  findMinAndMax(currentAxisLabelX);
-
- 
-  xLinearScale.domain([xMin, xMax]);
-  yLinearScale.domain([0, yMax]);
-
- 
-  var toolTip = d3
-    .tip()
+d3.select(".chart")
+    .append("div")
     .attr("class", "tooltip")
-    
-    .offset([80, -60])
-    
-    .html(function(data) {
-      var itemName = data.state;
-      var itemEdu = Number(data.bachelorOrHigher);
-      var itemInfo = Number(data[currentAxisLabelX]);
-      var itemString;
-      
-      if (currentAxisLabelX === "obese") {
-        itemString = "Obese: ";
-      }
-      else {
-        itemString = "Smoker: ";
-      }
-      if (currentAxisLabelY === "bachelorOrHigher") {
-        eduString = "College Grad: ";
-      }
-      else {
-        eduString = "HS Grad: ";
-      }
-      return itemName +
-        "<hr>" +
-        eduString +
-        itemEdu + "%<br>" +
-        itemString +
-        itemInfo + "%";
-    });
+    .style("opacity", 0);
 
- 
-  chart.call(toolTip);
 
-  chart
-    .selectAll("circle")
-    .data(myData)
-    .enter()
-    .append("circle")
-    .attr("cx", function(data, index) {
-      return xLinearScale(Number(data[currentAxisLabelX]));
-    })
-    .attr("cy", function(data, index) {
-      return yLinearScale(Number(data.bachelorOrHigher));
-    })
-    .attr("r", "12")
-    .attr("fill", "lightblue")
-   
-    .on("mouseover", function(data) {
-      toolTip.show(data)})
-    .on("mouseout", function(data) {
-      toolTip.hide(data)});
+d3.csv("assets/data/data.csv", function(error, phData) {
+  for (var i = 0; i < phData.length; i++){
+        
+        console.log(phData[i].abbr)
+  } 
+  if (error) throw error;
+  phData.forEach(function(d) {
 
-  chart
-    .selectAll("text")
-    .data(myData)
-    .enter()
-    .append("text")
-    .attr("text-anchor", "middle")
-    .attr("class","stateText")
-    .style("fill", "white")
-    .style("font", "10px sans-serif")
-    .style("font-weight", "bold")
-    .text(function(data) {
-      return data.abbr;})
-    .on("mouseover", function(data) {
-      toolTip.show(data)})
-    .on("mouseout", function(data) {
-      toolTip.hide(data)})
-    .attr("x", function(data, index) {
-      return xLinearScale(Number(data[currentAxisLabelX]));
-    })
-    .attr("y", function(data, index) {
-      return yLinearScale(Number(data.bachelorOrHigher))+4;
-    });
+      d.poverty = +d.poverty;
+      d.healthcare = +d.healthcare;
 
   
-  chart
-    .append("g")
-    .attr("transform", "translate(0," + height + ")")
-   
-    .attr("class", "x-axis")
-    .call(bottomAxis);
-
- 
-  chart.append("g")
-    .attr("class", "y-axis")
-    .call(leftAxis);
-
-  
-  chart
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 0 - margin.left + 40)
-    .attr("x", 0 - height / 2)
-    .attr("dy", "1em")
-    .attr("class", "axis-text")
-    .attr("data-axis-name", "bachelorOrHigher")
-    .text("Bachelor's Degree or Greater");
-
- 
-  chart
-    .append("text")
-    .attr(
-      "transform",
-      "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
-    )
-   
-    .attr("class", "axis-text active")
-    .attr("data-axis-name", "obese")
-    .text("Obese (BMI > 30)(%)");
-
-  chart
-    .append("text")
-    .attr(
-      "transform",
-      "translate(" + width / 2 + " ," + (height + margin.top + 45) + ")"
-    )
-   
-    .attr("class", "axis-text inactive")
-    .attr("data-axis-name", "currentSmoker")
-    .text("Current Smoker (%)");
-
-
   });
+ 
+  var x = d3.scaleLinear().range([0, chartWidth]);
+
+
+  var y= d3.scaleLinear().range([chartHeight, 0]);
+
+  var xAxis = d3.axisBottom(x);
+
+  var yAxis = d3.axisLeft(y);
+
+
+
+  var xValue = function(d) { return x(d.poverty);};
+  var yValue = function(d) { return y(d.healthcare);};
+
+
+
+  function findMinAndMax(i) {
+        xMin = d3.min(phData, function(d) {
+            return +d[i] * 0.8;
+        });
+
+        xMax =  d3.max(phData, function(d) {
+            return +d[i] * 1.1;
+        });
+
+        yMax = d3.max(phData, function(d) {
+            return +d.healthcare * 1.1;
+        });
+  };
+    
+  var currentAxisXLabel = "poverty";
+
+  findMinAndMax(currentAxisXLabel);
+
+   
+  xScale=x.domain([xMin, xMax]);
+  yScale=y.domain([0, yMax]);
+      
+
+  var toolTip = d3.tip("#scatter")
+        .attr("class", "tooltip")
+        .html(function(d) {
+            var state = d.abbr;
+            var poverty = +d.poverty;
+            var healthcare = +d.healthcare;
+            return (d.State + "<br> In Poverty: " + poverty + "%<br> Lack Healthcare: " + healthcare + "%");
+      });
+
+  chart.call(toolTip);
+                
+
+
+ 
+  circles = chart.selectAll('circle')
+        .data(phData)
+        .enter().append('circle')
+        .attr("class", "circle")
+        .attr("cx", function(d, index) {
+            return x(+d[currentAxisXLabel]);
+        })
+        .attr("cy", function(d, index) {
+            return y(d.healthcare);
+        })   
+        .attr('r','10')
+        .attr('stroke','black')
+        .attr('stroke-width',1)
+        .style('fill', "lightblue")
+        .attr("class", "circleText")
+      
+        .on("mouseover", function(d) {
+          toolTip.show(d);
+        })
+    
+        .on("mouseout", function(d, index) {
+          toolTip.hide(d);
+        });              
+     
+  
+  
+  circles.append('text')
+         .attr("x", function(d, index) {
+            return x(+d[currentAxisXLabel]- 0.08);
+        })
+         .attr("y", function(d, index) {
+            return y(d.healthcare - 0.2);
+        })
+    
+        .attr("text-anchor", "middle")
+        .text(function(d){
+            return d.abbr;})
+        .attr('fill', 'white')
+        .attr('font-size', 9);
+  
+  
+   
+  xAxis = d3.axisBottom(x);
+
+
+  chart.append("g")
+       .attr("class", "x axis")
+       .attr("transform", "translate(0," + chartHeight + ")")
+       .call(xAxis);
+    
+
+  chart.append("text")
+       .attr("class", "label")
+       .attr("transform", "translate(" + (chartWidth / 2) + " ," + (chartHeight - chartMargin.top+ 60) + ")")
+       .style("text-anchor", "middle")
+       .text('In Poverty (%) ');
+
+ 
+  yAxis = d3.axisLeft(y);
+            
+  chart.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(" + padding + ",0)")
+        .call(yAxis);       
+                
+ 
+  chart.append("text")
+       .attr("class", "label")
+       .attr("transform", "rotate(-90)")
+       .attr("y", 0 - (chartMargin.left + 4))
+       .attr("x", 0 - (chartHeight/ 2))
+       .attr("dy", "1em")
+       .style("text-anchor", "middle")
+       .text('Lacks healthcare (%)');
+});
